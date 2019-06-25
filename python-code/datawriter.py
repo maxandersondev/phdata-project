@@ -39,6 +39,25 @@ class DataWriter():
         self.cur.execute(add_data, insertList)
         self.cnx.commit()
 
+    def getDDoSRecords(self, numRecords, hitCountThresh, spanInMinutes):
+        #use something similar to this in real world situation of streaming log items
+        #select_data = "select ip, count(ip) as ipCount from apacheLogs where accessTime > now() - interval %s second group by ip order by ipCount desc ;"
+        select_data = "select ip, count(ip) as ipCount from apacheLogs group by ip having count(ip) >= {1} order by ipCount desc limit {0};".format(numRecords, hitCountThresh)
+        self.cur.execute(select_data)
+        return self.cur.fetchall()
+
+    def getAllInfo(self, ipList):
+        print("Generating all info file")
+        print(ipList)
+        #select_data = "select * from apacheLogs where ip in ({0})".format(",".join('?' * len(ipList)))
+        select_data = "select * from apacheLogs where ip in ("
+        for x in ipList:
+            select_data = select_data + "'" + x + "',"
+        select_data = select_data.rstrip(",") + ")"
+        print(select_data)
+        self.cur.execute(select_data)
+        return self.cur.fetchall()
+
 
 if __name__ == '__main__':  # If it's executed like a script (not imported)
     db = DataWriter()
