@@ -1,5 +1,7 @@
 import mysql.connector
-from mysql.connector import errorcode
+from datetime import datetime
+
+import re
 
 
 class DataWriter():
@@ -22,11 +24,19 @@ class DataWriter():
         self.cur.execute("SELECT VERSION()")
         print("Database version : %s " % self.cur.fetchone())
 
-    def insertRecord(self, logList):
+    def insertRecord(self, message):
         add_data = ("INSERT INTO apacheLogs "
-                    "(ip, logData) "
-                    "VALUES (trim(%s), trim(%s))")
-        self.cur.execute(add_data, logList)
+                    "(ip, logData, accessTime) "
+                    "VALUES (%s, %s, %s)")
+
+
+        regex = '([(\d\.)]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "-" "(.*?)"'
+        logList = re.match(regex, message).groups()
+        myDateTime = datetime.strptime(logList[1], "%d/%b/%Y:%H:%M:%S %z")
+        formattedDate = myDateTime.strftime('%Y-%m-%d %H:%M:%S')
+        insertList = (logList[0], message, formattedDate)
+        print(insertList)
+        self.cur.execute(add_data, insertList)
         self.cnx.commit()
 
 

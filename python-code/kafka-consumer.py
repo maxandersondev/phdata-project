@@ -1,4 +1,5 @@
 from kafka import KafkaConsumer
+from json import loads
 import datawriter
 
 consumer = KafkaConsumer(
@@ -6,15 +7,11 @@ consumer = KafkaConsumer(
      bootstrap_servers=['localhost:9092'],
      auto_offset_reset='earliest',
      enable_auto_commit=True,
-     group_id='my-group')
+     group_id='my-group',
+     value_deserializer=lambda m: loads(m.decode('utf-8')))
 
 
 myWriter = datawriter.DataWriter()
 for message in consumer:
-    message = message.value.decode('utf-8')[1:]  #get rid of double quote at front
-
-    splitMessage = message.split(' ', 1)
-    print("got a message: " + message)
-    print("inserting ip: '" + splitMessage[0] + "' log: '" + splitMessage[1] + "'")
-    myWriter.insertRecord(message.split(' ', 1))
+    myWriter.insertRecord(message.value)
 
