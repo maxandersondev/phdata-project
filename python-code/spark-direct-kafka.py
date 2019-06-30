@@ -1,5 +1,5 @@
 import os
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.0.2 pyspark-shell'
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.4.3 pyspark-shell'
 from pyspark import SparkContext
 from pyspark.streaming import StreamingContext
 from pyspark.streaming.kafka import KafkaUtils
@@ -7,10 +7,7 @@ import re
 
 #/usr/local/spark/bin/spark-submit --packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.0.0 /opt/extra1/Development/code/git/phdata-project/python-code/spark-direct-kafka.py
 
-def process_row(message):
-    regex = '([(\d\.)]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "-" "(.*?)"'
-    logList = re.match(regex, message).groups()
-    return lambda x, y: re.match(x, y).groups()
+
 
 if __name__ == "__main__":
     TIME_FRAME_IN_SECONDS = 60
