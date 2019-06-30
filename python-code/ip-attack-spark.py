@@ -13,9 +13,12 @@ def sendRecord(record):
     file.flush()
 
 def createContext():
-    # creating a context to run
+    """
+    createContect()
+    This will do the work of filtering the stream coming from kafka, it will sort and filter
+    :return: SSC
+    """
     BATCH_TIME_FRAME_IN_SECONDS: int = 60
-    #WINDOW_TIME_FRAME_IN_SECONDS: int = 120
     SLIDE_WINDOW_IN_SECONDS: int = 60
     ATTACK_THRESHOLD: int = 2
     sc = SparkContext(appName="phDataIPAttackProject")
@@ -37,12 +40,16 @@ def createContext():
     ip_dstream = kvs.map(lambda x: re.match(regex, x[1][1:-1].encode('utf-8').decode('unicode_escape')).groups()[0])
 
     # Count each value and number of occurences in the batch windowed
-    #count_values_windowed = ip_dstream.countByWindow(BATCH_TIME_FRAME_IN_SECONDS, SLIDE_WINDOW_IN_SECONDS).transform(lambda rdd:rdd.sortBy(lambda x:-x[1]))
     count_values_windowed_dstream = ip_dstream.countByValueAndWindow(BATCH_TIME_FRAME_IN_SECONDS, SLIDE_WINDOW_IN_SECONDS).transform(lambda y: y.sortBy(lambda x: -x[1]))
+    # Filtered to ATTACK_THRESHOLD
     count_values_windowed_dstream_filtered = count_values_windowed_dstream.filter(lambda x: x[1] > ATTACK_THRESHOLD)
+    # Make the output a bit easier to read
     count_values_windowed_dstream_filtered_pretty = count_values_windowed_dstream_filtered.map(lambda x: "IP: %s \t count: %s\n" % (x[0], x[1]))
+    #keep the counts grouped in the output
     count_this_batch.union(count_windowed).pprint()
+    # Print to screen
     count_values_windowed_dstream_filtered_pretty.pprint()
+    #iterate and send results to text file
     count_values_windowed_dstream_filtered_pretty.foreachRDD(lambda x: x.foreach(sendRecord))
 
     return ssc
@@ -50,7 +57,7 @@ def createContext():
 
 if __name__ == "__main__":
 
-    ssc = StreamingContext.getOrCreate('/tmp/ipAttack_v022.txt', lambda: createContext())
+    ssc = StreamingContext.getOrCreate('/tmp/ipAttack_v023.txt', lambda: createContext())
     ssc.start()
     ssc.awaitTermination()
 
